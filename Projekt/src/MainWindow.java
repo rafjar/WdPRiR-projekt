@@ -10,18 +10,6 @@ public class MainWindow extends JFrame {
     private DrawPanel drawPanel;
     private final Dimension windowSize;
 
-    private final Runnable checkCollisions = new Runnable() {
-        @Override
-        public void run() {
-            for(int i=0; i<nBalls; ++i) {
-                for(int j=i+1; j<nBalls; ++j) {
-                    if(Ball.checkIfCollide(balls[i], balls[j]))
-                        System.out.println("Collision of balls " + i + " and " + j);
-                }
-            }
-        }
-    };
-
     MainWindow(Dimension windowSize, int frameRate, int nBalls) {
         super("Mega wyczesane kule 2D");
         this.nBalls = nBalls;
@@ -55,12 +43,25 @@ public class MainWindow extends JFrame {
 
     private void scheduleWork() {
         ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+//        ScheduledExecutorService scheduledService = Executors.newScheduledThreadPool(1);
         for(var ball : balls)
             scheduledService.scheduleAtFixedRate(ball, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
 
         scheduledService.scheduleAtFixedRate(checkCollisions, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
         scheduledService.scheduleAtFixedRate(drawPanel, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
     }
+
+    private final Runnable checkCollisions = new Runnable() {
+        @Override
+        public void run() {
+            for(int i=0; i<nBalls; ++i) {
+                for(int j=i+1; j<nBalls; ++j) {
+                    if(Ball.checkIfCollide(balls[i], balls[j]))
+                        Ball.handleCollision(balls[i], balls[j]);
+                }
+            }
+        }
+    };
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new MainWindow(new Dimension(500, 500), 60, 5));
