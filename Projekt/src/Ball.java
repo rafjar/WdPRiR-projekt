@@ -2,7 +2,7 @@ import java.awt.*;
 import java.util.Random;
 
 public class Ball implements Runnable {
-    private static final double MAX_VEL = 1;
+    private static final double MAX_VEL = 2;
 
     int diameter;
     double xpos, ypos, xvel, yvel, mass;
@@ -47,36 +47,28 @@ public class Ball implements Runnable {
     }
 
     public static void handleCollision(Ball a, Ball b) {
-        double aRadius = a.diameter/2., aXpos = a.xpos + aRadius, aYpos = a.ypos + aRadius;
-        double bRadius = b.diameter/2., bXpos = b.xpos + bRadius, bYpos = b.ypos + bRadius;
-        double x = Math.abs(aXpos - bXpos);
-        double y = Math.abs(aYpos - bYpos);
-        double distance = Math.sqrt(x*x + y*y);
-
-
+        double aRadius = a.diameter/2.;
+        double bRadius = b.diameter/2.;
 
         double[] aVelDiff = {a.xvel-b.xvel, a.yvel-b.yvel};
         double[] aPosDiff = {a.xpos-b.xpos, a.ypos-b.ypos};
-        double aNewXvel = a.xvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distance*distance) * aPosDiff[0];
-        double aNewYvel = a.yvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distance*distance) * aPosDiff[1];
+        double aNewXvel = a.xvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * aPosDiff[0];
+        double aNewYvel = a.yvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * aPosDiff[1];
 
         double[] bVelDiff = {b.xvel-a.xvel, b.yvel-a.yvel};
         double[] bPosDiff = {b.xpos-a.xpos, b.ypos-a.ypos};
-        double bNewXvel = b.xvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distance*distance) * bPosDiff[0];
-        double bNewYvel = b.yvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distance*distance) * bPosDiff[1];
+        double bNewXvel = b.xvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * bPosDiff[0];
+        double bNewYvel = b.yvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * bPosDiff[1];
 
         a.xvel = aNewXvel;
         a.yvel = aNewYvel;
         b.xvel = bNewXvel;
         b.yvel = bNewYvel;
-    }
 
-    private static double[] vectorDifference(double[] vecA, double[] vecB) {
-        double[] ret = new double[vecA.length];
-        for(int i=0; i<vecA.length; ++i)
-            ret[i] = vecA[i] - vecB[i];
-
-        return ret;
+        while(checkIfCollide(a, b)) {
+            a.move();
+            b.move();
+        }
     }
 
     private static double dotProduct(double[] vecA, double[] vecB) {

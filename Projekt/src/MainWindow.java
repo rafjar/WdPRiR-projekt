@@ -56,14 +56,15 @@ public class MainWindow extends JFrame {
         public void run() {
             for(int i=0; i<nBalls; ++i) {
                 for(int j=i+1; j<nBalls; ++j) {
-                    if(Ball.checkIfCollide(balls[i], balls[j]))
+                    if(Ball.checkIfCollide(balls[i], balls[j])) {
                         Ball.handleCollision(balls[i], balls[j]);
+                    }
                 }
             }
         }
     };
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MainWindow(new Dimension(500, 500), 60, 5));
+        SwingUtilities.invokeLater(() -> new MainWindow(new Dimension(1000, 1000), 60, 20));
     }
 }
