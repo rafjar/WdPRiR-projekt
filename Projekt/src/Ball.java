@@ -15,7 +15,7 @@ public class Ball implements Runnable {
         Random r = new Random();
         color = new Color(r.nextFloat(), r.nextFloat(), r.nextFloat());
 
-        diameter = r.nextInt(10, 60+1);
+        diameter = r.nextInt(20, 60);
 
         mass = Math.PI * diameter * diameter / 4;
 
@@ -34,6 +34,16 @@ public class Ball implements Runnable {
 
         xpos += xvel;
         ypos += yvel;
+    }
+
+    public static boolean checkIfCollide(Ball a, Ball b) {
+        double aRadius = a.diameter/2, aXpos = a.xpos + aRadius, aYpos = a.ypos + aRadius;
+        double bRadius = b.diameter/2, bXpos = b.xpos + bRadius, bYpos = b.ypos + bRadius;
+
+        double x = Math.abs(aXpos - bXpos);
+        double y = Math.abs(aYpos - bYpos);
+
+        return Math.sqrt(x*x + y*y) <= aRadius + bRadius;
     }
 
     public void paint(Graphics2D g2d) {
