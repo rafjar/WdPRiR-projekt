@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.util.Random;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Ball implements Runnable {
     private static final double MAX_VEL = 1;
@@ -8,12 +9,13 @@ public class Ball implements Runnable {
     double xpos, ypos, xvel, yvel, mass, radius;
     Dimension windowSize;
     Color color;
+    private final ReentrantLock lock = new ReentrantLock();
 
     Ball(Dimension windowSize) {
         this.windowSize = windowSize;
 
         Random r = new Random();
-        color = new Color(r.nextFloat(), r.nextFloat(), r.nextFloat());
+        color = new Color(r.nextFloat(0, (float) 0.6), r.nextFloat(0, (float) 0.6), r.nextFloat(0, (float) 0.6));
 
         diameter = r.nextInt(20, 60);
         radius = diameter / 2.;
@@ -28,13 +30,18 @@ public class Ball implements Runnable {
     }
 
     public void move() {
-        if(xpos + xvel < 0 || xpos + xvel >= windowSize.width - diameter)
-            xvel *= -1;
-        if(ypos + yvel < 0 || ypos + yvel >= windowSize.height - diameter)
-            yvel *= -1;
+        lock.lock();
+        try {
+            if (xpos + xvel < 0 || xpos + xvel >= windowSize.width - diameter)
+                xvel *= -1;
+            if (ypos + yvel < 0 || ypos + yvel >= windowSize.height - diameter)
+                yvel *= -1;
 
-        xpos += xvel;
-        ypos += yvel;
+            xpos += xvel;
+            ypos += yvel;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public static boolean checkIfCollide(Ball a, Ball b) {
@@ -48,29 +55,41 @@ public class Ball implements Runnable {
     }
 
     public static void handleCollision(Ball a, Ball b) {
-        double distanceBetweenBalls = a.radius + b.radius;
-        double x = a.xpos-b.xpos;
-        double y = a.ypos-b.ypos;
-        double scale = (a.radius+b.radius) / Math.sqrt(x*x + y*y);
+        a.lock.lock();
+        b.lock.lock();
+        try {
+            double distanceBetweenBalls = a.radius + b.radius;
+            double x = a.xpos-b.xpos;
+            double y = a.ypos-b.ypos;
+            double scale = (a.radius+b.radius) / Math.sqrt(x*x + y*y);
 
-        double[] aVelDiff = {a.xvel-b.xvel, a.yvel-b.yvel};
-        double[] aPosDiff = {(x)*scale, (y)*scale};
-        double aNewXvel = a.xvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * aPosDiff[0];
-        double aNewYvel = a.yvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * aPosDiff[1];
+            double[] aVelDiff = {a.xvel-b.xvel, a.yvel-b.yvel};
+            double[] aPosDiff = {(x)*scale, (y)*scale};
+            double aNewXvel = a.xvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * aPosDiff[0];
+            double aNewYvel = a.yvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * aPosDiff[1];
 
-        double[] bVelDiff = {b.xvel-a.xvel, b.yvel-a.yvel};
-        double[] bPosDiff = {(-x)*scale, (-y)*scale};
-        double bNewXvel = b.xvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * bPosDiff[0];
-        double bNewYvel = b.yvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * bPosDiff[1];
+            double[] bVelDiff = {b.xvel-a.xvel, b.yvel-a.yvel};
+            double[] bPosDiff = {(-x)*scale, (-y)*scale};
+            double bNewXvel = b.xvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * bPosDiff[0];
+            double bNewYvel = b.yvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * bPosDiff[1];
 
-        a.xvel = aNewXvel;
-        a.yvel = aNewYvel;
-        b.xvel = bNewXvel;
-        b.yvel = bNewYvel;
+            final double collideScale = 0.01;
+            a.xvel = collideScale*aNewXvel;
+            a.yvel = collideScale*aNewYvel;
+            b.xvel = collideScale*bNewXvel;
+            b.yvel = collideScale*bNewYvel;
 
-        while(checkIfCollide(a, b)) {
-            a.move();
-            b.move();
+            while(checkIfCollide(a, b)) {
+                a.move();
+                b.move();
+            }
+            a.xvel = aNewXvel;
+            a.yvel = aNewYvel;
+            b.xvel = bNewXvel;
+            b.yvel = bNewYvel;
+        } finally {
+            b.lock.unlock();
+            a.lock.unlock();
         }
     }
 

@@ -47,7 +47,7 @@ public class MainWindow extends JFrame {
         for(var ball : balls)
             scheduledService.scheduleAtFixedRate(ball, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
 
-        scheduledService.scheduleAtFixedRate(checkCollisions, 0, 5*1000/frameRate, TimeUnit.MILLISECONDS);
+        scheduledService.scheduleWithFixedDelay(checkCollisions, 0, 1000000/(10*frameRate), TimeUnit.MICROSECONDS);
         scheduledService.scheduleAtFixedRate(drawPanel, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
     }
 
@@ -56,8 +56,10 @@ public class MainWindow extends JFrame {
         public void run() {
             for(int i=0; i<nBalls; ++i) {
                 for(int j=i+1; j<nBalls; ++j) {
-                    if(Ball.checkIfCollide(balls[i], balls[j])) {
-                        Ball.handleCollision(balls[i], balls[j]);
+                    synchronized (this) {
+                        if(Ball.checkIfCollide(balls[i], balls[j])) {
+                            Ball.handleCollision(balls[i], balls[j]);
+                        }
                     }
                 }
             }
@@ -65,6 +67,6 @@ public class MainWindow extends JFrame {
     };
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MainWindow(new Dimension(1000, 1000), 60, 20));
+        SwingUtilities.invokeLater(() -> new MainWindow(new Dimension(400, 400), 80, 8));
     }
 }
