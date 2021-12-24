@@ -2,10 +2,10 @@ import java.awt.*;
 import java.util.Random;
 
 public class Ball implements Runnable {
-    private static final double MAX_VEL = 2;
+    private static final double MAX_VEL = 1;
 
     int diameter;
-    double xpos, ypos, xvel, yvel, mass;
+    double xpos, ypos, xvel, yvel, mass, radius;
     Dimension windowSize;
     Color color;
 
@@ -16,6 +16,7 @@ public class Ball implements Runnable {
         color = new Color(r.nextFloat(), r.nextFloat(), r.nextFloat());
 
         diameter = r.nextInt(20, 60);
+        radius = diameter / 2.;
 
         mass = Math.PI * diameter * diameter / 4;
 
@@ -37,28 +38,30 @@ public class Ball implements Runnable {
     }
 
     public static boolean checkIfCollide(Ball a, Ball b) {
-        double aRadius = a.diameter/2., aXpos = a.xpos + aRadius, aYpos = a.ypos + aRadius;
-        double bRadius = b.diameter/2., bXpos = b.xpos + bRadius, bYpos = b.ypos + bRadius;
+        double aXpos = a.xpos + a.radius, aYpos = a.ypos + a.radius;
+        double bXpos = b.xpos + b.radius, bYpos = b.ypos + b.radius;
 
         double x = Math.abs(aXpos - bXpos);
         double y = Math.abs(aYpos - bYpos);
 
-        return Math.sqrt(x*x + y*y) <= aRadius + bRadius;
+        return Math.sqrt(x*x + y*y) <= a.radius + b.radius;
     }
 
     public static void handleCollision(Ball a, Ball b) {
-        double aRadius = a.diameter/2.;
-        double bRadius = b.diameter/2.;
+        double distanceBetweenBalls = a.radius + b.radius;
+        double x = a.xpos-b.xpos;
+        double y = a.ypos-b.ypos;
+        double scale = (a.radius+b.radius) / Math.sqrt(x*x + y*y);
 
         double[] aVelDiff = {a.xvel-b.xvel, a.yvel-b.yvel};
-        double[] aPosDiff = {a.xpos-b.xpos, a.ypos-b.ypos};
-        double aNewXvel = a.xvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * aPosDiff[0];
-        double aNewYvel = a.yvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * aPosDiff[1];
+        double[] aPosDiff = {(x)*scale, (y)*scale};
+        double aNewXvel = a.xvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * aPosDiff[0];
+        double aNewYvel = a.yvel - 2*b.mass / (a.mass + b.mass) * dotProduct(aVelDiff, aPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * aPosDiff[1];
 
         double[] bVelDiff = {b.xvel-a.xvel, b.yvel-a.yvel};
-        double[] bPosDiff = {b.xpos-a.xpos, b.ypos-a.ypos};
-        double bNewXvel = b.xvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * bPosDiff[0];
-        double bNewYvel = b.yvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / ((aRadius+bRadius)*(aRadius+bRadius)) * bPosDiff[1];
+        double[] bPosDiff = {(-x)*scale, (-y)*scale};
+        double bNewXvel = b.xvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * bPosDiff[0];
+        double bNewYvel = b.yvel - 2*a.mass / (a.mass + b.mass) * dotProduct(bVelDiff, bPosDiff) / (distanceBetweenBalls*distanceBetweenBalls) * bPosDiff[1];
 
         a.xvel = aNewXvel;
         a.yvel = aNewYvel;

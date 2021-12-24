@@ -47,7 +47,7 @@ public class MainWindow extends JFrame {
         for(var ball : balls)
             scheduledService.scheduleAtFixedRate(ball, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
 
-        scheduledService.scheduleAtFixedRate(checkCollisions, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
+        scheduledService.scheduleAtFixedRate(checkCollisions, 0, 5*1000/frameRate, TimeUnit.MILLISECONDS);
         scheduledService.scheduleAtFixedRate(drawPanel, 0, 1000/frameRate, TimeUnit.MILLISECONDS);
     }
 
